@@ -55,7 +55,7 @@ def main():
 
     # embed
     embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
-    vectorstore = Chroma.from_documents(chunks, embeddings, persist_directory="chroma_index")
+    vector_store = Chroma.from_documents(chunks, embeddings, persist_directory="chroma_index")
 
 if __name__ == "__main__":
     # Get environment variables (OPENAI_API_KEY)
@@ -67,11 +67,11 @@ if __name__ == "__main__":
         main()
 
     embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
-    vectorstore = Chroma(persist_directory="chroma_index", embedding_function=embeddings)
+    vector_store = Chroma(persist_directory="chroma_index", embedding_function=embeddings)
     while input("Test relevancy? [y for continue] \n") == "y":
 
         query = input("Document query: ")
-        retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
+        retriever = vector_store.as_retriever(search_kwargs={"k": 2})
         relevant_docs = retriever.invoke(query)
         for doc in relevant_docs:
             print("------------------------------------")

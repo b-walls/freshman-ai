@@ -16,14 +16,17 @@ Author: Brendan Walls
 """
 
 from pathlib import Path
-import os, time, sys
+import os
+import time
+import sys
+
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
 from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
 from langchain_core.documents import Document
-from langchain import hub
+from langchain.prompts import PromptTemplate
 
 # Constants
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -41,13 +44,27 @@ embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
 vector_store = Chroma(persist_directory="chroma_index", embedding_function=embeddings)
 
 # Load prompt template from LangChain Hub
-prompt = hub.pull("rlm/rag-prompt")
+custom_prompt = PromptTemplate(
+    input_variables=["context", "question", "history"],
+    template="""
+    You are a helpful assistant for JMU freshman. Use the following pieces of retrieved context to
+    answer the question. If you don't know the answer, just say that you don't know. Use three sentences
+    maximum, unless instructed to make a list, in which case you will create a bullet point list extending
+    the length necessary for the question. Keep all answers concise.
+
+    Question: {question}
+    Context: {context}
+    History: {history}
+    Answer:
+    """
+)
 
 class State(TypedDict):
     """Represents the state passed between graph nodes."""
     question: str
     context: List[Document]
     answer: str
+    history: List[str]
 
 
 def retrieve(state: State):
@@ -73,9 +90,16 @@ def generate(state: State):
         dict: A dictionary with the generated answer.
     """
     docs_content = "\n\n".join(doc.page_content for doc in state["context"])
-    messages = prompt.invoke({"question": state["question"], "context": docs_content})
+    history = state.get("history", [])
+    messages = custom_prompt.format(
+        question=state["question"],
+        context=docs_content,
+        history=history
+    )
     response = llm.invoke(messages)
-    return {"answer": response.content}
+    history.append(f"\nUser: {state['question']}\nAssistant: {response.content}")
+    return {"answer": response.content,
+            "history": history}
 
 
 # Compile application graph
@@ -99,11 +123,16 @@ def typing_print(text, delay=0.02):
 if __name__ == "__main__":
     typing_print("Hello, I'm here to help you navigate your first year as a JMU student!")
     typing_print("What can I help you with?")
+    history = []
     while True:
         q = input("> ")
         if q == "q":
             break
-        response = graph.invoke({"question": q})
+        response = graph.invoke({"question": q, "history": history})
         typing_print(response["answer"], 0.03)
+
+        history = response["history"]
+        if len(history) > 10:
+            history = history[1:]
         print()
     

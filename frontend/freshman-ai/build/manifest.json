@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "FreshmanAI Chatbot Extension",
+  "version": "1.0",
+  "description": "Chatbot made to help you get through orientation!",
+  "content_scripts": [
+    {
+      "matches": ["*://*.jmu.edu/*"],
+      "js": ["inject.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["main.js"],
+      "matches": ["*://*.jmu.edu/*"]
+    }
+  ]
+}

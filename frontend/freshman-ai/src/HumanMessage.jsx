@@ -9,7 +9,8 @@ const HumanChatStyle = {
   border: "1px solid #333",
   alignSelf: "flex-end",
   maxWidth: "70%",
-  wordBreak: "break-word"
+  wordBreak: "break-word",
+  marginBottom: "15px"
 }
 
 function HumanMessage({text}) {

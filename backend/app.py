@@ -1,38 +1,29 @@
-"""Script to run the JMU Freshman Assistant chatbot from console.
-
-This script uses LangChain, LangGraph, and OpenAI's API to create an interactive Q&A bot.
-The bot retrieves relevant information from embedded documents and generates helpful responses
-using a language model.
-
-Modules:
-    - dotenv: for loading OpenAI API keys
-    - langchain_openai: for OpenAI LLM and embeddings
-    - langchain_chroma: for persistent vector store
-    - langgraph.graph: for state-based chaining
-    - langchain_core.documents: for document representation
-    - langchain.hub: for pulling reusable prompt templates
-
-Author: Brendan Walls
-"""
-
-from pathlib import Path
 import os
-import time
-import sys
-
+from pathlib import Path
 from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
 from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
 from langchain_core.documents import Document
 from langchain.prompts import PromptTemplate
+from pydantic import BaseModel
 
 # Constants
 EMBEDDING_MODEL = "text-embedding-3-small"
 LLM_MODEL = "gpt-4.1-nano"
 
-# Load environment
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 env_path = Path(os.getcwd()) / ".env"
 load_dotenv(dotenv_path=env_path, override=True)
 
@@ -51,13 +42,18 @@ custom_prompt = PromptTemplate(
     input_variables=["context", "question", "history"],
     template="""
     You are a helpful assistant for JMU freshman. Use the following pieces of retrieved context to
-    answer the question. If you don't know the answer, just say that you don't know. Use three sentences
-    maximum, unless instructed to make a list, in which case you will create a bullet point list extending
-    the length necessary for the question. Keep all answers concise.
+    answer the question. If you don't know the answer, just say that you don't know. 
+    You pay close attention to the chat history to make sure you are helping the user as best as 
+    possible. You make responses short and to the point when necessary.
 
-    Question: {question}
-    Context: {context}
-    History: {history}
+    Question: 
+    {question}
+    
+    Context: 
+    {context}
+
+    Here is the chat history for extra context:
+    {history}
     Answer:
     """
 )
@@ -110,32 +106,34 @@ graph_builder = StateGraph(State).add_sequence([retrieve, generate])
 graph_builder.add_edge(START, "retrieve")
 graph = graph_builder.compile()
 
-def typing_print(text, delay=0.02):
-    """Simulates typing effect for console output.
+chat_history = []
+
+class QueryRequest(BaseModel):
+    """
+    Represents the request payload for a user query.
+
+    Attributes:
+        query (str): The question submitted by the user.
+    """
+    query: str
+
+@app.post("/api/ask")
+async def fetch_response(request: QueryRequest):
+    """
+    Handles incoming POST requests to the /api/ask endpoint.
 
     Args:
-        text (str): Text to display.
-        delay (float): Delay in seconds per character.
+        request (QueryRequest): The request object containing the user’s query.
+
+    Returns:
+        dict: A dictionary with the generated answer from the LLM.
     """
-    for char in text:
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(delay)
-    print()
+    global chat_history
+    print(request.query)
+    response = graph.invoke({"question": request.query, "history": chat_history})
+    chat_history = response["history"]
 
-if __name__ == "__main__":
-    typing_print("Hello, I'm here to help you navigate your first year as a JMU student!")
-    typing_print("What can I help you with?")
-    history = []
-    while True:
-        q = input("> ")
-        if q == "q":
-            break
-        response = graph.invoke({"question": q, "history": history})
-        typing_print(response["answer"], 0.03)
-
-        history = response["history"]
-        if len(history) > 10:
-            history = history[1:]
-        print()
-    
+    if len(chat_history) > 10:
+        chat_history = chat_history[1:]
+ 
+    return {"answer": response["answer"]}

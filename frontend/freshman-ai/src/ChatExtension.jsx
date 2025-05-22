@@ -4,6 +4,7 @@ import AIMessage from "./AIMessage";
 import HumanMessage from "./HumanMessage";
 import ChatHeader from "./ChatHeader";
 import InputBar from "./InputBar";
+import LoadingMessage from "./LoadingMessage";
 
 const btnStyle = {
   position: "fixed",
@@ -112,7 +113,7 @@ function ChatExtension() {
               )
             )}
             {loading ? (
-              <AIMessage text={"..."}/>
+              <LoadingMessage/>
             ) : (
               <></>
             )}

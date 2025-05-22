@@ -1,4 +1,3 @@
-import React from 'react'
 import { RiRobot2Line } from "react-icons/ri";
 import ReactMarkdown from 'react-markdown';
 
@@ -22,11 +21,19 @@ const aiMessageRowStyle = {
   display: "flex",
   alignItems: "flex-end",
   gap: "8px",
-  marginBottom: "15px"
+  marginBottom: "4px"
 }
 
-function AIMessage({text}) {
+const timeStyle = {
+  color: "#777777",
+  fontSize: "0.8rem",
+  marginBottom: "5px",
+  marginLeft: "40px"
+}
+
+function AIMessage({text, time}) {
   return (
+    <>
     <div style={aiMessageRowStyle}>
       <RiRobot2Line size={25} style={robotIconStyle} />
       <div style={aiChatStyle}>
@@ -37,6 +44,8 @@ function AIMessage({text}) {
         </ReactMarkdown>
       </div>
     </div>
+    <div style={timeStyle}>{time}</div>
+    </>
   )
 }
 

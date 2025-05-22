@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { IoChatbubblesOutline } from "react-icons/io5";
 import AIMessage from "./AIMessage";
 import HumanMessage from "./HumanMessage";
@@ -59,7 +59,7 @@ function ChatExtension() {
 
   // Messages datastructure
   const [messages, setMessages] = useState([
-    { text: sampleAIText, sender: "ai" }
+    { text: sampleAIText, sender: "ai", time: new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'}) }
   ]);
 
   const messagesEndRef = useRef(null);
@@ -73,6 +73,7 @@ function ChatExtension() {
 
   // handle a query from user
   const handleSend = async (message) => {
+    const time = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})
     setMessages(prev => [...prev, { text: message, sender: "human" }]);
 
     try {
@@ -88,12 +89,12 @@ function ChatExtension() {
 
     // Add the AI's response to the chat
     setLoading(false);
-    setMessages(prev => [...prev, { text: data.answer, sender: "ai" }]);
+    setMessages(prev => [...prev, { text: data.answer, sender: "ai", time: time }]);
   } catch (error) {
     setLoading(false);
     setMessages(prev => [
       ...prev,
-      { text: "Sorry, there was an error contacting the AI.", sender: "ai" }
+      { text: "Sorry, there was an error contacting the AI.", sender: "ai", time: time}
     ]);
   }
 
@@ -107,9 +108,9 @@ function ChatExtension() {
           <div style={chatMessagesStyle} ref={messagesEndRef}>
             {messages.map((msg, idx) =>
               msg.sender === "ai" ? (
-                <AIMessage key={idx} text={msg.text} />
+                <AIMessage key={idx} text={msg.text} time={msg.time}/>
               ) : (
-                <HumanMessage key={idx} text={msg.text} />
+                <HumanMessage key={idx} text={msg.text} time={msg.time}/>
               )
             )}
             {loading ? (

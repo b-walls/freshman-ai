@@ -1,4 +1,3 @@
-import React from 'react'
 import ChatExtension from './ChatExtension'
 
 function App() {

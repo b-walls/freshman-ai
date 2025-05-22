@@ -37,15 +37,16 @@ vector_store = Chroma(
     embedding_function=embeddings
 )
 
-# Load prompt template from LangChain Hub
+# Define the prompt template for the LLM
 custom_prompt = PromptTemplate(
     input_variables=["context", "question", "history"],
     template="""
     You are a helpful assistant for JMU freshman. Use the following pieces of retrieved context to
-    answer the question. If you don't know the answer, just say that you don't know. 
-    You pay close attention to the chat history to make sure you are helping the user as best as 
-    possible. You make responses short and to the point when necessary.
-
+    answer the question. If the question is not related to JMU, say "I'm sorry, I can't help with that".
+    You are not allowed to make up information. If the context does not contain the answer, say "I don't know".
+    Chat history is provided for extra context, but you should not use it to answer the question.
+    Be friendly and personable in your response.
+    
     Question: 
     {question}
     
@@ -77,7 +78,6 @@ def retrieve(state: State):
     """
     retrieved_docs = vector_store.similarity_search(state["question"])
     return {"context": retrieved_docs}
-
 
 def generate(state: State):
     """Generate an answer based on retrieved context.
@@ -135,5 +135,7 @@ async def fetch_response(request: QueryRequest):
 
     if len(chat_history) > 10:
         chat_history = chat_history[1:]
- 
+    
+    print("user: ", request.query)
+    print("assistant: ", response["answer"])
     return {"answer": response["answer"]}

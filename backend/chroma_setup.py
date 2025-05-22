@@ -42,7 +42,7 @@ def main():
     5. Store the embeddings in a FAISS vector store and save it locally.
     """
     # load the pdf
-    loader = PyPDFLoader("one_book.pdf")
+    loader = PyPDFLoader(Path(os.getcwd()) / "one_book.pdf")
     documents = loader.load()
 
     # chunk

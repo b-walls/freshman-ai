@@ -1,5 +1,6 @@
 import React from 'react'
 import { RiRobot2Line } from "react-icons/ri";
+import ReactMarkdown from 'react-markdown';
 
 const aiChatStyle = {
   background: "#CBB677",
@@ -27,9 +28,13 @@ const aiMessageRowStyle = {
 function AIMessage({text}) {
   return (
     <div style={aiMessageRowStyle}>
-      <RiRobot2Line size={25} style={robotIconStyle}/>
+      <RiRobot2Line size={25} style={robotIconStyle} />
       <div style={aiChatStyle}>
-        <span>{text}</span>
+        <ReactMarkdown components={{
+          p: (props) => <span {...props} />
+        }}>
+          {String(text)}
+        </ReactMarkdown>
       </div>
     </div>
   )
